@@ -1,0 +1,11 @@
+1. Set up repo and folders
+2. installed pip install -U Flask-SQLAlchemy
+
+want user to be able to download their data
+SQLite a serverless database, no setup, just a single file
+
+- [DONE 7/7/25] define schema 
+- can import genres via csv or something
+- find data, clean, import into database (write an import script)
+- start defining user functionalities (minimal app to display something, then user interactions)
+- ALSO add user functionality like our google sheet
