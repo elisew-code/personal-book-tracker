@@ -6,6 +6,7 @@ CREATE TABLE book (
     book_id INTEGER PRIMARY KEY AUTOINCREMENT, 
     title TEXT NOT NULL, 
     author TEXT,
+    isbn TEXT UNIQUE,
     genre_id INTEGER, 
     status TEXT CHECK(status IN ('To Read', 'Reading', 'Completed', 'Abandoned')),       
     start_date TEXT,     -- Store as ISO string: "2024-07-07" (quality checks here?)

@@ -4,8 +4,23 @@
 want user to be able to download their data
 SQLite a serverless database, no setup, just a single file
 
+
 - [DONE 7/7/25] define schema 
 - can import genres via csv or something
 - find data, clean, import into database (write an import script)
 - start defining user functionalities (minimal app to display something, then user interactions)
 - ALSO add user functionality like our google sheet
+
+- geospatial data! need to add to schema too
+
+data:
+https://www.kaggle.com/datasets/anshtanwar/top-200-trending-books-with-reviews (users not used)
+https://www.kaggle.com/datasets/saurabhbagchi/books-dataset
+
+1. clean file names IN THE SCRIPT
+
+also later add an api of some sort? geographical data?
+- use the thingy used in 2001 but for libraries
+
+- make a definitions folder? 
+- need to be able to downlaod the data in excel again 
