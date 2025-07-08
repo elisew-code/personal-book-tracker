@@ -24,3 +24,4 @@ also later add an api of some sort? geographical data?
 
 - make a definitions folder? 
 - need to be able to downlaod the data in excel again 
+- can you do indexes for sql lite?
