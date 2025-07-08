@@ -16,6 +16,7 @@ SQLite a serverless database, no setup, just a single file
 data:
 https://www.kaggle.com/datasets/anshtanwar/top-200-trending-books-with-reviews (users not used)
 https://www.kaggle.com/datasets/saurabhbagchi/books-dataset
+https://www.kaggle.com/datasets/athu1105/book-genre-prediction
 
 1. clean file names IN THE SCRIPT
 
@@ -25,3 +26,6 @@ also later add an api of some sort? geographical data?
 - make a definitions folder? 
 - need to be able to downlaod the data in excel again 
 - can you do indexes for sql lite?
+
+
+- (!!!) use a file to get a list of genres, then genre match using that? 
