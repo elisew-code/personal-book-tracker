@@ -1,5 +1,5 @@
 
-# (viewed data structure in excel)
+# (viewed data structure in excel - manual inspection)
 
 import sys
 from pathlib import Path
@@ -7,22 +7,20 @@ PROJECT_ROOT_DIR = Path(__file__).parent.parent
 sys.path.append(str(PROJECT_ROOT_DIR)) 
 
 import definitions as d
-#import shutil
 import pandas as pd
-#import csv
 import re
 
 ENCODING = 'latin-1'
 
-# generate new files with cleaned df, not just make copies
+# cleaning filenames
 def clean_filenames(book_directories):    
     unclean_directories = [
         item for item in book_directories 
-        if not (item.name.startswith('.') or item.name.startswith('clean'))
+        if not (item.name.startswith('.') or item.name.startswith('renamed_'))
     ]
     
     for item in unclean_directories:
-        new_name = 'clean_'
+        new_name = 'renamed_'
 
         if item.match('**/Top*.csv'): 
             new_name += 'top-100_books.csv'
@@ -33,33 +31,10 @@ def clean_filenames(book_directories):
         else:
             new_name += item.name
 
-
-        #new_path = item.parent / new_name
         p = Path(item)
-        p.rename(Path(item.parent, new_name))
-        #os.rename(item.name, new_path)
-        #Path(item).with_name(new_path) # return something to error check
+        p.rename(Path(item.parent, new_name)) 
 
-book_directories = list(Path(d.BOOK_DATA_PATH).iterdir())
-#clean_filenames(book_directories) # only make new clean versions after cleaning!
-
-# turn into function or something? OR make it so we search to find relevant columns (i.e., name search)! then insert those
-# functionalise as much as possible, like searching headers or something
-
-#print(os.getcwd())
-
-# turn into function that just gets any file, reads headers, then inserts the info where needed based on that?
-
-# clean each file here, using functions to apply to columns as they are found
-# rename columns as part of clearning
-
-# create genre column using genre table? like genre match or something?? see notes 
-# what headers are we looking for, based on the schema? maybe need a constant list, use that to filter out or rename or something? put in definition file?
-
-# maybe a function, genre match?
-
-#.loc is used to access a row by another index if you've set one, like title
-# otherwise they both work the same, the first row (.loc[0]) is the same as accessing the row via index 0, numbered by default
+# create genre column using genre table? like genre match or something? a function?
 
 def find_delimiter(firstline):
     delim = ','
@@ -73,86 +48,66 @@ def find_delimiter(firstline):
 
     return delim
 
-def clean_data(file):
-    with open(file, 'r', encoding=ENCODING) as f:
-        firstline = f.readline()
-        f.close()
+def clean_data():
+    for file in file_paths:
+        with open(file, 'r', encoding=ENCODING) as f:
+            firstline = f.readline()
+            f.close()
 
-    delim = find_delimiter(firstline)
-    df = pd.read_csv(file, delimiter=delim, encoding=ENCODING, on_bad_lines='skip') # skip malformed lines
-    df = clean_columns(df) 
+        delim = find_delimiter(firstline)
+        df = pd.read_csv(file, delimiter=delim, encoding=ENCODING, on_bad_lines='skip') # skip malformed lines - check
+        df = clean_columns(df) 
 
-    # write the cleaned version to a new file AFTER cleaning
+        # clean the data types here (df has all potential columns, so can clean as one df)
 
-    # put this all into a df by detecting delimiters, 
-    # then fix headers + filter the columns needed/not needed at the same time
-    # then some cleaning of remaining data
-
-def clean_columns(original_df): # TO FIX
+def clean_columns(original_df): 
     filtered_df = pd.DataFrame() # empty df
-    removed_columns = []
-    # do pattern matching to any expected columns, filter those that don't match
+
     for original_header in original_df.columns:
-        sanitised_header = re.sub(r'[-_]', ' ', original_header).strip()
-        print(f'original_header sanitised to ')
+        sanitised_header = re.sub(r'[-_]', ' ', original_header).strip().lower()
+        if 'book' in sanitised_header.split(' ') and len(sanitised_header.split(' ')) > 1:
+            sanitised_header = sanitised_header.replace('book', '').strip()
 
-        for valid_header in d.VALID_SCHEMA_COLUMNS: 
-            # boundaries for stricter match
-            if sanitised_header == valid_header:
-                print(sanitised_header, ", ", valid_header)
-                filtered_df[valid_header] = original_df[original_header]
+        # flags
+        is_review = 'review' in sanitised_header.split(' ') # exact match to avoid 'reviewer', etc.
+        is_title_like = any(re.search(p, sanitised_header, re.IGNORECASE) for p in ['name', 'book', 'title'])             
+        is_synopsis = any(re.search(p, sanitised_header, re.IGNORECASE) for p in ['synopsis', 'summary', 'description']) 
+        is_rating = any(re.search(p, sanitised_header, re.IGNORECASE) for p in ['rating'])
+        is_publication_year = any(re.search(p, sanitised_header, re.IGNORECASE) for p in ['year'])
 
-            elif (re.search('name', sanitised_header, re.IGNORECASE) or re.search('book', sanitised_header, re.IGNORECASE)) and not re.search('user', sanitised_header, re.IGNORECASE) and not re.search('review', sanitised_header, re.IGNORECASE):
-                print(sanitised_header, ", name")
-                filtered_df['title'] = original_df[original_header]
+        if is_synopsis:
+            filtered_df['synopsis'] = original_df[original_header]
 
-            elif re.search('summary', sanitised_header, re.IGNORECASE) or re.search('description', sanitised_header, re.IGNORECASE):
-                print(sanitised_header, ", summary/description")
-                filtered_df['synopsis'] = original_df[original_header]
-    
+        elif is_review and not is_title_like:
+            filtered_df['review'] = original_df[original_header]
+            
+        elif is_rating:
+            filtered_df['rating'] = original_df[original_header]
+
+        elif is_publication_year:
+            filtered_df['publication_year'] = pd.to_numeric(original_df[original_header], errors="coerce") # mixed data types detected in the column
+            # do coerce for other columns? appropriate cleaning?
+
+        elif is_title_like: 
+            filtered_df['title'] = original_df[original_header]
+
+        elif sanitised_header in d.VALID_SCHEMA_COLUMNS: 
+            filtered_df[sanitised_header] = original_df[original_header]
+
     print(f'{filtered_df.columns} extracted from {original_df.columns}')
     return filtered_df
-        
-    # put a message of 'columns not added' for the user or whatever
 
-
-
-    # need a constant thingy to match headers, filter them?
-    # return the standardised headers, then filter irrelevant ones?
-    return headers
-
-
-#clean_file_paths = [str(Path(d.BOOK_DATA_PATH) / item.name) for item in book_directories if not item.name.startswith('.') and item.name.startswith('clean')]
+book_directories = list(Path(d.BOOK_DATA_PATH).iterdir())
+clean_filenames(book_directories) 
 
 file_paths = [str(Path(d.BOOK_DATA_PATH) / item.name) for item in book_directories if not item.name.startswith('.')]
 
-for file in file_paths:
-    print(file)
-    clean_data(file) # cleaning the data, quality and header checks
-    #sort_data(file) # putting info into relevant dfs
+clean_data() # cleaning the data, quality and header checks - check cleaning choices
 
-# insert_data() # inserting df into the schema ()
-# reuse this function for later inserts? like insert into x table functions?
-# insert into books, insert into reviews etc. etc. 
+#def sort_data(): # putting info into relevant place in db -> make insert_data(); reuse this function for later inserts
+    # for file in file_paths
 
-# load data into a df, 
-# clean headers, then use a list of the schema stuff to drop those not needed
-
-# then make a fucntion to extract columns that are the same and put into a table, or join and put into the database etc
-#for item in book_directories:
-
-
-#clean_ratings()
-
-#clean_reviews()
-
-#clean_top_100()
-
-#clean_books()
-
-#clean_genre_predictions()
-
-    
-
-
-
+# change to: clean all then sort all at once
+#for file in file_paths:
+    #clean_data(file) # cleaning the data, quality and header checks - check cleaning choices
+    #sort_data(file) # putting info into relevant place in db -> make insert_data(); reuse this function for later inserts

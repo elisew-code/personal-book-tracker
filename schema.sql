@@ -21,7 +21,7 @@ CREATE TABLE book (
     synopsis TEXT, 
     author TEXT,
     publisher TEXT,
-    publication_year TEXT, -- BC? int? check?
+    publication_year TEXT, -- BC? int? check? keep 
     isbn TEXT UNIQUE,
     genre_id INTEGER, 
 );
