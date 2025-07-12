@@ -29,3 +29,11 @@ also later add an api of some sort? geographical data?
 
 
 - (!!!) use a file to get a list of genres, then genre match using that? 
+
+- using TEXT for the schema, is that right?
+
+# write the cleaned version to a new file AFTER cleaning !
+
+return things always, to do error checking
+
+- do function definition thingies in there
